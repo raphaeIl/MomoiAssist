@@ -7,7 +7,7 @@ def main():
     window_thread = threading.Thread(target=client_overlay.start)
     window_thread.start()
 
-    total_assault_helper.start(client_overlay.update_text_display)
+    total_assault_helper.start(client_overlay.update_text_display, client_overlay.update_progress_bar)
     # total_assault_helper_thread = threading.Thread(target=total_assault_helper.start)
     # total_assault_helper_thread.start()
 
