@@ -1,0 +1,7 @@
+QMainWindow {
+}
+QLabel {
+    color: white;
+    font-family: "Roboto Black";
+    font-size: 24pt;
+}
