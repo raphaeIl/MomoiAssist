@@ -8,21 +8,25 @@ def round_started():
         return pyautogui.pixel(807, 89) == (214, 134, 7)
 
 def get_ingame_time_display():
-    return screenshot_and_recognize_text(1604, 34, 115, 45)
+    # return screenshot_and_recognize_text(1604, 34, 115, 45)
+    return screenshot_and_recognize_text(1604, 34, 200, 45)
 
 def screenshot_and_recognize_text(x, y, width, height):
     screenshot = pyautogui.screenshot(region=(x, y, width, height))
     text = pytesseract.image_to_string(screenshot, config='--psm 6')
-    time_format_regex = r'\d{2}:\d{2}'
+    time_format_regex = r'\d{2}:\d{2}.\d{3}'
     matches = re.findall(time_format_regex, text)
-    
-    return matches[0] + ":000" if matches else None
+
+    return matches[0] if matches else None
+
 
 def formatted_duration_to_ms(formatted_duration):
-    minutes, seconds, milliseconds = formatted_duration.split(':')
-
-    return int(minutes) * 60000 + int(seconds) * 1000 + int(milliseconds) 
-
+    try:
+        minutes, seconds_milliseconds = formatted_duration.split(':')
+        seconds, milliseconds = seconds_milliseconds.split('.')
+        return int(minutes) * 60000 + int(seconds) * 1000 + int(milliseconds) 
+    except:
+         return None
 def get_seconds_from_ms(formatted_duration):
     minutes, seconds, milliseconds = str(formatted_duration).split(':')
 

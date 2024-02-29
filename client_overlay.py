@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFontDatabase, QFont, QPixmap, QKeyEvent
 from PyQt5.QtGui import QPainter, QBrush, QLinearGradient, QColor, QFont, QPen
@@ -55,72 +55,86 @@ class TransparentImageWidget(QWidget):
 
 
 class OverlayWindow(QWidget):
-    def __init__(self, x, y, width, height):
+    def __init__(self):
         super().__init__()
         self.progress = 0  # Initial progress
 
-        self.setGeometry(x, y, width, height)
+        menu_width, menu_height = 780, 150
+
+        self.setGeometry(10, 1080 - menu_height - 10, menu_width, menu_height)  # Set the size of the window
+        # self.setGeometry(0 - menu_height + 10, menu_width, menu_height)  # Set the size of the window
         self.initUI()
  
     def initUI(self):
-        fontPath = './res/Roboto-Black.ttf'
+        # fontPath = './res/ResourceHanRoundedCN-Bold.ttf'
+        fontPath = './res/Google_Sans-500-100_0-0_0.ttf'
         QFontDatabase.addApplicationFont(fontPath)
-        self.setWindowTitle('Overlay Window')
-        self.text = QLabel('TYPE TIME DESCRIPTION', self)
+
+        self.setWindowTitle("Overlay Window")
+
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(40, 15, 0, 0) 
+
+        # Profile Picture
+        profile_pic = QLabel(self)
+        pixmap = QPixmap("./res/skill_icons/mika.png")  # Replace with the path to your image
+        profile_pic.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+        layout.addWidget(profile_pic)
+        layout.addStretch(1)
+
+        # Title
+        title = QLabel("TYPE TIME DESCRIPTION", self)
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+        self.title = title
+
+        layout.addStretch(2)
 
         with open('./res/style.qss', 'r') as f:
             style = f.read()
-            self.setStyleSheet(style)
-            self.text.setStyleSheet(style)
-        
-        self.setWindowOpacity(1)
-        self.text.setAlignment(Qt.AlignCenter)
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.text)
+            title.setStyleSheet(style)
 
         self.setLayout(layout)
 
-        # Alternatively, to make the window's background completely transparent (including no frame):
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput)
-        self.setAttribute(Qt.WA_TranslucentBackground)
         self.show()
 
     def setProgress(self, value):
-        self.progress = max(0, min(100, value))  # Clamp value between 0 and 100
-        self.update()  # Trigger repaint
-
+        self.progress = value  
+        self.update() 
+    def update_text_display(self, text):
+        self.title.setText(str(text))
+    
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.Antialiasing)  # For smooth edges
+        painter.setBrush(QBrush(QColor(2, 0, 31, 150)))  # Background color
+        painter.setPen(Qt.NoPen)  # No border
+        painter.drawRoundedRect(self.rect(), 15, 15)  # Rounded corners
+
+        bar_width, bar_height = 450, 25
+        bottom_padding = 30
+        rect_x = self.width() / 2 - bar_width / 2
+        rect_y = self.height() - bar_height - bottom_padding
+        # Progress Bar
+
+        gradient = QLinearGradient(rect_x, 0, rect_x + bar_width, 0)
+        gradient.setColorAt(max(self.progress - 0.1, 0), QColor(79, 197, 255, 220))  # Blue end at progress
+        gradient.setColorAt(min(self.progress + 0.1, 1), QColor(0, 0, 0, 50))  # Black starts immediately after progress
         
-        gradient = QLinearGradient(0, 0, self.width() * (self.progress / 50.0), 0)
-        gradient.setColorAt(0.49, QColor(79, 197, 255, 220))
-        gradient.setColorAt(0.51, QColor(0, 0, 0, 100))
-        
-        rect = QRectF(0, 0, self.width(), self.height())
+        rect = QRectF(rect_x, rect_y, bar_width, bar_height)
         painter.fillRect(rect, QBrush(gradient))
-        
-        # pen = QPen(QColor(0, 0, 0, 255), 2)  # Black border with 5 pixels thickness
-        # painter.setPen(pen)
-        # painter.drawRect(0, 0, self.width(), self.height(), 10, 10)  # Subtract 1 to ensure the border is fully visible
 
-        super(OverlayWindow, self).paintEvent(event)
-
-    def update_text_display(self, text):
-        self.text.setText(str(text))
-        
 
 tw = None
 def start():
     app = QApplication(sys.argv)
 
-    WINDOW_X, WINDOW_Y, WINDOW_WIDTH, WINDOW_HEIGHT = 100, -100, 100, 100
     global tw
-    tw = OverlayWindow(WINDOW_X, WINDOW_Y, WINDOW_WIDTH, WINDOW_HEIGHT)
+    tw = OverlayWindow()
     tw.setProgress(50)  # Set initial progress here
-    tw.move(int(1920 / 2 - 394 / 2), -15)
-    # tw.move(int(1920 / 2 - tw.width() / 2), 200)
-    # tw.move(1400, 70)
     widget = TransparentImageWidget()
     widget.showFullScreen()
     
