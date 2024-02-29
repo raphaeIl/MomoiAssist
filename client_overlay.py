@@ -1,9 +1,58 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFontDatabase, QFont
+from PyQt5.QtGui import QFontDatabase, QFont, QPixmap, QKeyEvent
 from PyQt5.QtGui import QPainter, QBrush, QLinearGradient, QColor, QFont, QPen
 from PyQt5.QtCore import Qt, QRectF
+import threading
+from pynput import keyboard
+
+class TransparentImageWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        # self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput)
+
+        
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setGeometry(0, 0, 1920, 1080)  # Fullscreen for 1920x1080 resolution
+
+        self.imageLabel = QLabel(self)
+        self.imageLabel.setGeometry(0, 0, 1920, 1080)
+        
+        self.pixmap = QPixmap("./res/kuro_overlay_red.png").scaled(1920, 1080, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        self.opacity = 0  # Start with half opacity
+
+        self.updateImageOpacity()
+
+    def updateImageOpacity(self):
+        tempPixmap = QPixmap(self.pixmap.size())
+        tempPixmap.fill(Qt.transparent)
+
+        painter = QPainter(tempPixmap)
+        painter.setOpacity(self.opacity)
+        painter.drawPixmap(0, 0, self.pixmap)
+        painter.end()
+
+        self.imageLabel.setPixmap(tempPixmap)
+
+    def onKeyPressEvent(self):
+        def on_press(key):
+            try:
+                if key.char == 't':
+                    print("T pressed")
+                    self.opacity = 0.5 if self.opacity == 0 else 0
+                    self.updateImageOpacity()
+            except AttributeError:
+                pass
+
+        def on_release(key):
+            pass
+        
+        with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+            listener.join()
+
+
 
 class OverlayWindow(QWidget):
     def __init__(self, x, y, width, height):
@@ -72,6 +121,11 @@ def start():
     tw.move(int(1920 / 2 - 394 / 2), -15)
     # tw.move(int(1920 / 2 - tw.width() / 2), 200)
     # tw.move(1400, 70)
+    widget = TransparentImageWidget()
+    widget.showFullScreen()
+    
+    keyListenerThread = threading.Thread(target=widget.onKeyPressEvent)
+    keyListenerThread.start()
 
     print(tw.geometry())
     sys.exit(app.exec_())
