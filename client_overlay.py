@@ -86,7 +86,8 @@ class OverlayWindow(QWidget):
         layout.addStretch(1)
 
         # Title
-        title = QLabel("TYPE TIME DESCRIPTION", self)
+        title = QLabel("Idle", self)
+        # title = QLabel("TYPE TIME DESCRIPTION", self)
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
         self.title = title
