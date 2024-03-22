@@ -79,10 +79,10 @@ class OverlayWindow(QWidget):
         layout.setContentsMargins(40, 15, 0, 0) 
 
         # Profile Picture
-        profile_pic = QLabel(self)
-        pixmap = QPixmap("./res/skill_icons/mika.png")  # Replace with the path to your image
-        profile_pic.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
-        layout.addWidget(profile_pic)
+        self.profile_pic = QLabel(self)
+        # pixmap = QPixmap("./res/skill_icons/mika.png")  # Replace with the path to your image
+        # self.profile_pic.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+        layout.addWidget(self.profile_pic)
         layout.addStretch(1)
 
         # Title
@@ -105,9 +105,14 @@ class OverlayWindow(QWidget):
     def setProgress(self, value):
         self.progress = value  
         self.update() 
+
     def update_text_display(self, text):
         self.title.setText(str(text))
     
+    def update_image_display(self, character_name):
+        pixmap = QPixmap(f"./res/skill_icons/{character_name}.png")  # Replace with the path to your image
+        self.profile_pic.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)  # For smooth edges
@@ -139,14 +144,16 @@ def start():
     widget = TransparentImageWidget()
     widget.showFullScreen()
     
-    keyListenerThread = threading.Thread(target=widget.onKeyPressEvent)
-    keyListenerThread.start()
+    # keyListenerThread = threading.Thread(target=widget.onKeyPressEvent)
+    # keyListenerThread.start()
 
     print(tw.geometry())
     sys.exit(app.exec_())
 
-def update_text_display(text):
+def update_display(text, character_name):
     tw.update_text_display(text)
+    tw.update_image_display(character_name)
+
 
 def update_progress_bar(percent):
     tw.setProgress(percent)

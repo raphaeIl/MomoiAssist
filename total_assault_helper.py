@@ -1,18 +1,19 @@
 import utils
 
 class Action():
-    def __init__(self, type, amount, description):
+    def __init__(self, type, skill, amount, description):
         self.type = type
+        self.skill = skill
         self.amount = amount
         self.description = description
 
 class TotalAssaultHelper():
-    def __init__(self, update_text_display, update_progress_bar):
+    def __init__(self, update_display, update_progress_bar):
         self.update_progress = update_progress_bar
-        self.update_fn = update_text_display
-        self.actions = self.parse_actions_from_file("./res/rotation.txt")
+        self.update_fn = update_display
+        self.actions = self.parse_actions_from_file("./res/p1.txt")
         
-        self.update_fn("黑白IS难度两刀(常规)(感谢千代大佬)")
+        self.update_fn("国服S16室外寿司 双亚子 2刀IS(感谢千代大佬)", "mika")
 
     def start(self):
         while True:
@@ -33,7 +34,7 @@ class TotalAssaultHelper():
             next_action = self.actions[action_index]
 
             display_text = f"""下个技能: {next_action.description}, {next_action.type}: {next_action.amount}"""
-            self.update_fn(display_text)
+            self.update_fn(display_text, next_action.skill)
 
             previous = utils.formatted_duration_to_ms(self.actions[max(0, action_index - 1)].amount)
             time_between_current_and_next = abs(previous - utils.formatted_duration_to_ms(self.actions[action_index].amount)) + 0.001
@@ -56,12 +57,12 @@ class TotalAssaultHelper():
         with open(file_path, 'r', encoding='utf-8') as file:
             for line in file:
                 parts = line.strip().split(' ')
-                if len(parts) == 3:  # Ensure the line has exactly 3 components
-                    action = Action(type=parts[0], amount=parts[1], description=parts[2])
+                if len(parts) == 4:  # Ensure the line has exactly 3 components
+                    action = Action(type=parts[0], skill=parts[1], amount=parts[2], description=parts[3])
                     actions.append(action)
         return actions
 
 
-def start(update_text_display, update_progress_bar):
-    helper = TotalAssaultHelper(update_text_display, update_progress_bar)
+def start(update_display, update_progress_bar):
+    helper = TotalAssaultHelper(update_display, update_progress_bar)
     helper.start()
