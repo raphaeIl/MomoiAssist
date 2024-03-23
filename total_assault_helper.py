@@ -8,10 +8,10 @@ class Action():
         self.description = description
 
 class TotalAssaultHelper():
-    def __init__(self, update_display, update_progress_bar):
+    def __init__(self, rotation_file_path, update_display, update_progress_bar):
         self.update_progress = update_progress_bar
         self.update_fn = update_display
-        self.actions = self.parse_actions_from_file("./res/p1.txt")
+        self.actions = self.parse_actions_from_file(rotation_file_path)
         
         self.update_fn("国服S16室外寿司 双亚子 2刀IS(感谢千代大佬)", "mika")
 
@@ -74,6 +74,6 @@ class TotalAssaultHelper():
         return actions
 
 
-def start(update_display, update_progress_bar):
-    helper = TotalAssaultHelper(update_display, update_progress_bar)
+def start(rotation_file_path, update_display, update_progress_bar):
+    helper = TotalAssaultHelper(rotation_file_path, update_display, update_progress_bar)
     helper.start()

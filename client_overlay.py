@@ -6,6 +6,7 @@ from PyQt5.QtGui import QPainter, QBrush, QLinearGradient, QColor, QFont, QPen
 from PyQt5.QtCore import Qt, QRectF
 import threading
 from pynput import keyboard
+import total_assault_helper
 import random
 import utils
 import os
@@ -140,9 +141,8 @@ class OverlayWindow(QWidget):
     def update_text_display(self, text):
         menu_width, menu_height = 780, 150
 
-        if (len(str(text)) != len(str(self.title.text())) and len(str(text)) < 35 and self.geometry().width() != menu_width):
-            print("hi")
-            self.setGeometry(10, 1080 - menu_height - 10, menu_width, menu_height) 
+        if (str(text) is not str(self.title.text()) and len(str(text)) < 35 and self.geometry().width() != menu_width):
+            self.setGeometry(10, 1080 - menu_height - 10, menu_width + 10, menu_height) 
 
         self.title.setText(str(text))
         
@@ -193,7 +193,10 @@ def start():
     tw.setProgress(0.5, True)  # Set initial progress here
     widget = TransparentImageWidget()
     widget.showFullScreen()
-    
+
+    total_assault_helper_thread = threading.Thread(target=total_assault_helper.start, args=(f"./res/{sys.argv[1]}", update_display, update_progress_bar))
+    total_assault_helper_thread.start()
+
     # keyListenerThread = threading.Thread(target=widget.onKeyPressEvent)
     # keyListenerThread.start()
 
