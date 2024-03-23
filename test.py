@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout
 from PyQt5.QtGui import QPixmap, QPainter, QBrush, QColor, QFontDatabase, QLinearGradient
 from PyQt5.QtCore import Qt, QRectF
+import utils
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -62,8 +63,42 @@ class MainWindow(QWidget):
         rect = QRectF(self.width() / 2 - bar_width / 2, self.height() - bar_height - bottom_padding, bar_width, bar_height)
         painter.fillRect(rect, QBrush(gradient))
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
+from PyQt5.QtGui import QColor
+
+# Initial array of rainbow colors with alpha values
+rainbow_colors_with_alpha = [
+    QColor(255, 0, 0, 150),    # Red with alpha 150
+    QColor(255, 127, 0, 150),  # Orange with alpha 150
+    QColor(255, 255, 0, 150),  # Yellow with alpha 150
+    QColor(0, 255, 0, 150),    # Green with alpha 150
+    QColor(0, 0, 255, 150),    # Blue with alpha 150
+    QColor(75, 0, 130, 150),   # Indigo with alpha 150
+    QColor(148, 0, 211, 150)   # Violet with alpha 150
+]
+
+# Function to linearly interpolate (lerp) between two QColor objects
+def lerp_color(color1, color2, t):
+    """
+    Linearly interpolates between color1 and color2 by t.
+    t = 0 returns color1, t = 1 returns color2.
+    """
+    return QColor(
+        int(color1.red() + (color2.red() - color1.red()) * t),
+        int(color1.green() + (color2.green() - color1.green()) * t),
+        int(color1.blue() + (color2.blue() - color1.blue()) * t),
+        int(color1.alpha() + (color2.alpha() - color1.alpha()) * t),
+    )
+
+# Generate the new array of colors with 10 interpolated colors between each pair of original colors
+expanded_rainbow_colors = []
+
+for i in range(len(rainbow_colors_with_alpha) - 1):
+    expanded_rainbow_colors.append(rainbow_colors_with_alpha[i])
+    for t in range(1, 11):
+        interpolated_color = lerp_color(rainbow_colors_with_alpha[i], rainbow_colors_with_alpha[i + 1], t / 11.0)
+        expanded_rainbow_colors.append(interpolated_color)
+expanded_rainbow_colors.append(rainbow_colors_with_alpha[-1])
+
+# Extracting the colors as requested, no code output
+for color in expanded_rainbow_colors:
+    print(f"""QColor({color.red()}, {color.green()}, {color.blue()}, {color.alpha()}),""")

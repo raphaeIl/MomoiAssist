@@ -6,6 +6,9 @@ from PyQt5.QtGui import QPainter, QBrush, QLinearGradient, QColor, QFont, QPen
 from PyQt5.QtCore import Qt, QRectF
 import threading
 from pynput import keyboard
+import random
+import utils
+import os
 
 class TransparentImageWidget(QWidget):
     def __init__(self):
@@ -57,13 +60,18 @@ class TransparentImageWidget(QWidget):
 class OverlayWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.progress = 0  # Initial progress
+        self.target_progress = 0  # Initial progress
+        self.progress = 0
 
         menu_width, menu_height = 780, 150
 
         self.setGeometry(10, 1080 - menu_height - 10, menu_width, menu_height)  # Set the size of the window
         # self.setGeometry(0 - menu_height + 10, menu_width, menu_height)  # Set the size of the window
         self.initUI()
+        self.color_rot = 0
+        self.progress_bar_color = QColor(79, 197, 255, 150)
+        self.current_character = "mika"
+
  
     def initUI(self):
         # fontPath = './res/ResourceHanRoundedCN-Bold.ttf'
@@ -80,8 +88,8 @@ class OverlayWindow(QWidget):
 
         # Profile Picture
         self.profile_pic = QLabel(self)
-        # pixmap = QPixmap("./res/skill_icons/mika.png")  # Replace with the path to your image
-        # self.profile_pic.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+        pixmap = QPixmap("./res/skill_icons/mika.png")  # Replace with the path to your image
+        self.profile_pic.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
         layout.addWidget(self.profile_pic)
         layout.addStretch(1)
 
@@ -98,20 +106,53 @@ class OverlayWindow(QWidget):
             style = f.read()
             title.setStyleSheet(style)
 
+
         self.setLayout(layout)
 
         self.show()
 
-    def setProgress(self, value):
-        self.progress = value  
+
+    def setProgress(self, value, immediate=False):
+        if immediate == True: 
+            self.progress = value
+            self.target_progress = value
+        else:
+            self.target_progress = value  
+            self.target_progress = max(0, min(1, self.target_progress))
+        
         self.update() 
 
+    def updateProgress(self):
+        """Gradually update current progress towards the target progress."""
+        # print(self.progress, self.target_progress)
+        if self.progress < self.target_progress:
+            self.progress += ((self.target_progress - self.progress) * 0.01) # Increment progress
+            if self.progress > self.target_progress:
+                self.progress = self.target_progress
+        elif self.progress > self.target_progress:
+            self.progress -= 0.0001  # Decrement progress
+            if self.progress < self.target_progress:
+                self.progress = self.target_progress
+
+        self.update()  # Trigger repaint
+
+
     def update_text_display(self, text):
+        menu_width, menu_height = 780, 150
+
+        if (len(str(text)) != len(str(self.title.text())) and len(str(text)) < 35 and self.geometry().width() != menu_width):
+            print("hi")
+            self.setGeometry(10, 1080 - menu_height - 10, menu_width, menu_height) 
+
         self.title.setText(str(text))
-    
+        
+
     def update_image_display(self, character_name):
-        pixmap = QPixmap(f"./res/skill_icons/{character_name}.png")  # Replace with the path to your image
-        self.profile_pic.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+        if self.current_character is not character_name and os.path.isfile(f"./res/skill_icons/{character_name}.png"):
+            pixmap = QPixmap(f"./res/skill_icons/{character_name}.png")  # Replace with the path to your image
+            self.profile_pic.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+            self.current_character = character_name
+
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -127,11 +168,20 @@ class OverlayWindow(QWidget):
         # Progress Bar
 
         gradient = QLinearGradient(rect_x, 0, rect_x + bar_width, 0)
-        gradient.setColorAt(max(self.progress - 0.1, 0), QColor(79, 197, 255, 220))  # Blue end at progress
-        gradient.setColorAt(min(self.progress + 0.1, 1), QColor(0, 0, 0, 50))  # Black starts immediately after progress
+        self.updateProgress()
+        
+        speed = 100
+        if (self.color_rot % speed == 0):
+            self.progress_bar_color = utils.rainbow_colors[int(self.color_rot / speed) % len(utils.rainbow_colors)]
+
+        gradient.setColorAt(max(self.progress - 0.001, 0), self.progress_bar_color)  # Blue end at progress 79, 197, 255, 150
+        gradient.setColorAt(min(self.progress + 0.001, 1), QColor(0, 0, 0, 30))  # Black starts immediately after progress
         
         rect = QRectF(rect_x, rect_y, bar_width, bar_height)
         painter.fillRect(rect, QBrush(gradient))
+        
+        self.color_rot += 1
+        self.color_rot %= 1_000_000_000
 
 
 tw = None
@@ -140,7 +190,7 @@ def start():
 
     global tw
     tw = OverlayWindow()
-    tw.setProgress(50)  # Set initial progress here
+    tw.setProgress(0.5, True)  # Set initial progress here
     widget = TransparentImageWidget()
     widget.showFullScreen()
     
@@ -148,12 +198,15 @@ def start():
     # keyListenerThread.start()
 
     print(tw.geometry())
-    sys.exit(app.exec_())
+
+    exit_code = app.exec_()
+    print("Exit")
+    sys.exit(exit_code)
 
 def update_display(text, character_name):
     tw.update_text_display(text)
     tw.update_image_display(character_name)
 
 
-def update_progress_bar(percent):
-    tw.setProgress(percent)
+def update_progress_bar(percent, immediate=False):
+    tw.setProgress(percent, immediate)
