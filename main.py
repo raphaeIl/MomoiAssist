@@ -1,7 +1,9 @@
 import client_overlay
+import sys
 
 def main():
     client_overlay.start()
+
 
 # def old_main():
     # window_thread = threading.Thread(target=client_overlay.start)

@@ -137,12 +137,10 @@ class OverlayWindow(QWidget):
 
         self.update()  # Trigger repaint
 
-
     def update_text_display(self, text):
-        menu_width, menu_height = 780, 150
-
-        if (str(text) is not str(self.title.text()) and len(str(text)) < 35 and self.geometry().width() != menu_width):
-            self.setGeometry(10, 1080 - menu_height - 10, menu_width + 10, menu_height) 
+        # menu_width, menu_height = 780, 150
+        # if ((str(text) != str(self.title.text())) and len(str(text)) < 35 and ((self.geometry().width()) != (menu_width + 10))):
+            # self.setGeometry(10, 1080 - menu_height - 10, menu_width + 10, menu_height) 
 
         self.title.setText(str(text))
         
@@ -155,6 +153,11 @@ class OverlayWindow(QWidget):
 
 
     def paintEvent(self, event):
+        menu_width, menu_height = 780, 150
+
+        if (len(str(self.title.text())) < 35 and ((self.geometry().width()) != (822))):
+            self.setGeometry(10, 1080 - menu_height - 10, 822, menu_height) 
+        
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)  # For smooth edges
         painter.setBrush(QBrush(QColor(2, 0, 31, 150)))  # Background color
