@@ -8,11 +8,13 @@ class Action():
         self.description = description
 
 class TotalAssaultHelper():
-    def __init__(self, rotation_file_path, update_display, update_progress_bar):
+    def __init__(self, action_file_paths, update_display, update_progress_bar):
         self.update_progress = update_progress_bar
         self.update_fn = update_display
-        self.actions = self.parse_actions_from_file(rotation_file_path)
-        
+        self.actions = self.parse_actions_from_file(action_file_paths[0])
+        self.action_file_path_index = 0
+        self.action_file_paths = action_file_paths
+
         self.update_fn("国服S16室外寿司 双亚子 2刀IS(感谢千代大佬)", "mika")
 
     def start(self):
@@ -73,7 +75,16 @@ class TotalAssaultHelper():
                 actions.append(action)
         return actions
 
+    def update_actions(self):
+        self.actions = self.parse_actions_from_file(self.action_file_paths[self.action_file_path_index % len(self.action_file_paths)])
+        self.action_file_path_index += 1
 
-def start(rotation_file_path, update_display, update_progress_bar):
-    helper = TotalAssaultHelper(rotation_file_path, update_display, update_progress_bar)
+helper = None
+def start(rotation_file_paths, update_display, update_progress_bar):
+    global helper
+    helper = TotalAssaultHelper(rotation_file_paths, update_display, update_progress_bar)
     helper.start()
+
+
+def update_actions():
+    helper.update_actions()

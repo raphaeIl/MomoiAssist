@@ -10,6 +10,8 @@ import total_assault_helper
 import random
 import utils
 import os
+import invisible_overlay
+import time
 
 class TransparentImageWidget(QWidget):
     def __init__(self):
@@ -42,13 +44,13 @@ class TransparentImageWidget(QWidget):
 
     def onKeyPressEvent(self):
         def on_press(key):
-            try:
-                if key.char == 't':
-                    print("T pressed")
-                    self.opacity = 0.5 if self.opacity == 0 else 0
-                    self.updateImageOpacity()
-            except AttributeError:
-                pass
+            # try:
+                # if key.char == 't':
+                    # print("T pressed")
+                    # self.opacity = 0.5 if self.opacity == 0 else 0
+                    # self.updateImageOpacity()
+            # except AttributeError:
+            pass
 
         def on_release(key):
             pass
@@ -61,6 +63,7 @@ class TransparentImageWidget(QWidget):
 class OverlayWindow(QWidget):
     def __init__(self):
         super().__init__()
+
         self.target_progress = 0  # Initial progress
         self.progress = 0
 
@@ -73,7 +76,10 @@ class OverlayWindow(QWidget):
         self.progress_bar_color = QColor(79, 197, 255, 150)
         self.current_character = "mika"
 
- 
+    def init_update_fn(self, update_actions, update_display):
+        self.update_actions = update_actions
+        self.update_display = update_display
+
     def initUI(self):
         # fontPath = './res/ResourceHanRoundedCN-Bold.ttf'
         fontPath = './res/Google_Sans-500-100_0-0_0.ttf'
@@ -111,6 +117,23 @@ class OverlayWindow(QWidget):
         self.setLayout(layout)
 
         self.show()
+
+
+    def onKeyPressEvent(self):
+        def on_press(key):
+            try:
+                if key.char == 't':
+                    self.update_actions()
+                    self.update_display()
+
+            except AttributeError:
+                pass
+
+        def on_release(key):
+            pass
+        
+        with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+            listener.join()
 
 
     def setProgress(self, value, immediate=False):
@@ -192,16 +215,33 @@ def start():
     app = QApplication(sys.argv)
 
     global tw
+
     tw = OverlayWindow()
     tw.setProgress(0.5, True)  # Set initial progress here
     widget = TransparentImageWidget()
     widget.showFullScreen()
 
-    total_assault_helper_thread = threading.Thread(target=total_assault_helper.start, args=(f"./res/{sys.argv[1]}", update_display, update_progress_bar))
+    rotation_file_paths = ["./res/p1.txt", "./res/p2.txt", "./res/idle.txt"]
+    rotation_names = ["P1", "P2", "Idle"]
+
+    # total_assault_helper_thread = threading.Thread(target=total_assault_helper.start, args=(f"./res/{sys.argv[1]}", update_display, update_progress_bar))
+    total_assault_helper_thread = threading.Thread(target=total_assault_helper.start, args=(rotation_file_paths, update_display, update_progress_bar))
     total_assault_helper_thread.start()
 
-    # keyListenerThread = threading.Thread(target=widget.onKeyPressEvent)
-    # keyListenerThread.start()
+    keyListenerThread = threading.Thread(target=tw.onKeyPressEvent)
+    keyListenerThread.start()
+
+    invisOverlay = invisible_overlay.InvisibleOverlay(rotation_names)
+    invisOverlay.show()
+
+    time.sleep(1)
+    tw.init_update_fn(total_assault_helper.update_actions, invisOverlay.onKeyPressEvent)
+    
+
+
+
+    # invisible_overlay_thread = threading.Thread(target=invisible_overlay.start)
+    # invisible_overlay_thread.start()
 
     print(tw.geometry())
 
@@ -213,6 +253,7 @@ def update_display(text, character_name):
     tw.update_text_display(text)
     tw.update_image_display(character_name)
 
-
 def update_progress_bar(percent, immediate=False):
     tw.setProgress(percent, immediate)
+
+
