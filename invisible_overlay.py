@@ -43,9 +43,9 @@ class InvisibleOverlay(QMainWindow):
         self.centerWindow()
 
     def onKeyPressEvent(self):
+        self.current_rotation_index += 1
         self.setWindowOpacity(1)
         self.label.setText(self.rotation_names[self.current_rotation_index % len(self.rotation_names)])
-        self.current_rotation_index += 1
 
         if self.windowOpacity() == 1:
             threading.Thread(target=self.decrease_opacity).start()

@@ -6,14 +6,19 @@ from PyQt5.QtGui import QPainter, QBrush, QLinearGradient, QColor, QFont, QPen
 from PyQt5.QtCore import Qt, QRectF
 import threading
 from pynput import keyboard
+from PyQt5.QtGui import QPalette, QColor
 import total_assault_helper
 import random
 import utils
 import os
 import invisible_overlay
 import time
+from PyQt5.QtCore import pyqtSignal, QObject
 
 from total_assault_helper import TotalAssaultHelper
+
+class SignalEmitter(QObject):
+    update_display = pyqtSignal(str, str, str, str)
 
 class TransparentImageWidget(QWidget):
     def __init__(self):
@@ -44,23 +49,6 @@ class TransparentImageWidget(QWidget):
 
         self.imageLabel.setPixmap(tempPixmap)
 
-    def onKeyPressEvent(self):
-        def on_press(key):
-            # try:
-                # if key.char == 't':
-                    # print("T pressed")
-                    # self.opacity = 0.5 if self.opacity == 0 else 0
-                    # self.updateImageOpacity()
-            # except AttributeError:
-            pass
-
-        def on_release(key):
-            pass
-        
-        with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-            listener.join()
-
-
 
 class OverlayWindow(QWidget):
     def __init__(self):
@@ -77,6 +65,7 @@ class OverlayWindow(QWidget):
         self.color_rot = 0
         self.progress_bar_color = QColor(79, 197, 255, 150)
         self.current_character = "mika"
+        self.current_text_display = ""
 
     def init_update_fn(self, update_actions, update_display):
         self.update_actions = update_actions
@@ -98,24 +87,43 @@ class OverlayWindow(QWidget):
         # Profile Picture
         self.profile_pic = QLabel(self)
         pixmap = QPixmap("./res/skill_icons/mika.png")  # Replace with the path to your image
-        self.profile_pic.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+        self.profile_pic.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio))
         layout.addWidget(self.profile_pic)
         layout.addStretch(1)
 
+        self.profile_pic.setAlignment(Qt.AlignLeft)
+        # self.profile_pic.setStyleSheet("""QLabel { padding-right: 100px; }""")
+
         # Title
         title = QLabel("Idle", self)
+        subtitle = QLabel("subtitle", self)
+
         # title = QLabel("TYPE TIME DESCRIPTION", self)
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
+        layout.addWidget(subtitle)
+        
         self.title = title
+        self.subtitle = subtitle
 
         layout.addStretch(2)
+        layout.setContentsMargins(15, 15, 0, 0)
 
         with open('./res/style.qss', 'r') as f:
             style = f.read()
             title.setStyleSheet(style)
 
-
+        palette = QPalette()
+        palette.setColor(QPalette.WindowText, QColor("red"))
+        self.subtitle.setPalette(palette)
+        self.subtitle.setStyleSheet("""QLabel {
+    font-family: "Resource Han Rounded CN";
+    font-size: 25pt;
+    padding-top: 0px;
+    padding-right: 0px;
+    padding-bottom: 70px;
+    padding-left: 50px;
+}""")
         self.setLayout(layout)
 
         self.show()
@@ -163,27 +171,46 @@ class OverlayWindow(QWidget):
         self.update()  # Trigger repaint
 
     def update_text_display(self, text, colored_text, color):
-        # menu_width, menu_height = 780, 150
-        # if ((str(text) != str(self.title.text())) and len(str(text)) < 35 and ((self.geometry().width()) != (menu_width + 10))):
-            # self.setGeometry(10, 1080 - menu_height - 10, menu_width + 10, menu_height) 
+        menu_width, menu_height = 780, 150
 
-        self.title.setText(str(text) + f"<span style=\"color:{color};\">\t\t\t{colored_text}</span>")
-        
+        if ((str(self.title.text()) != self.current_text_display) and ((self.geometry().width()) != (822))):
+            if ((len(str(self.title.text())) < len(self.current_text_display))):
+                print("updated window size")
+                self.setGeometry(10, 1080 - menu_height - 10, 822, menu_height)
+            
+            self.current_text_display = str(self.title.text())
+    
+        # if self.title.text() != str(str(text) + f"<span style=\"color:{color};\">{colored_text}</span>"):
+            # self.title.setText(str(text) + f"<span style=\"color:{color};\">{colored_text}</span>")
+        self.title.setText(str(text))
+
+        if (self.subtitle.text() != colored_text):
+            self.subtitle.setText(colored_text)
+            
+            if (self.subtitle.palette().color(QPalette.WindowText).rgba() != QColor(color).rgba()):
+                palette = QPalette()
+                palette.setColor(QPalette.WindowText, QColor(color))
+                self.subtitle.setPalette(palette)
+                pass
 
     def update_image_display(self, character_name):
-        if self.current_character is not character_name and os.path.isfile(f"./res/skill_icons/{character_name}.png"):
-            pixmap = QPixmap(f"./res/skill_icons/{character_name}.png")  # Replace with the path to your image
-            self.profile_pic.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+        if self.current_character is not character_name and os.path.isfile(f"./res/skill_icons/{character_name}.webp"):
+            pixmap = QPixmap(f"./res/skill_icons/{character_name}.webp")  # Replace with the path to your image
+            self.profile_pic.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio))
             self.current_character = character_name
 
 
     def paintEvent(self, event):
-        menu_width, menu_height = 780, 150
+        # menu_width, menu_height = 780, 150
 
-        # print(len(str(self.title.text())), str(self.title.text()))
-        if (len(str(self.title.text())) < 110 and ((self.geometry().width()) != (822))):
-            print("hi")
-            self.setGeometry(10, 1080 - menu_height - 10, 822, menu_height) 
+        # print(len(str (self.title.text())), str(self.title.text()))
+        # print(self.title.text(), self.current_text_display)
+        # if ((str(self.title.text()) != self.current_text_display) and ((self.geometry().width()) != (822))):
+        #     if ((len(str(self.title.text())) < len(self.current_text_display))):
+        #         print("updated window size")
+        #         self.setGeometry(10, 1080 - menu_height - 10, 822, menu_height)
+            
+        #     self.current_text_display = str(self.title.text())
         
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)  # For smooth edges
@@ -225,12 +252,14 @@ def start():
     widget = TransparentImageWidget()
     widget.showFullScreen()
 
-    rotation_file_paths = ["./res/p1.txt", "./res/p2.txt", "./res/idle.txt"]
-    rotation_names = ["P1", "P2", "Idle"]
+    rotation_file_paths = ["./res/idle.txt", "./res/p1.txt", "./res/p2.txt"]
+    rotation_names = ["Idle", "P1", "P2"]
 
     # total_assault_helper_thread = threading.Thread(target=total_assault_helper.start, args=(f"./res/{sys.argv[1]}", update_display, update_progress_bar))
+    emitter = SignalEmitter()
+    emitter.update_display.connect(update_display)
 
-    helper_client = TotalAssaultHelper(rotation_file_paths, update_display, update_progress_bar)
+    helper_client = TotalAssaultHelper(emitter, rotation_file_paths, update_display, update_progress_bar)
 
     helper_client_thread = threading.Thread(target=helper_client.start, )
     helper_client_thread.start()
