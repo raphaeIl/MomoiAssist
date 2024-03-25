@@ -13,6 +13,8 @@ import os
 import invisible_overlay
 import time
 
+from total_assault_helper import TotalAssaultHelper
+
 class TransparentImageWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -160,12 +162,12 @@ class OverlayWindow(QWidget):
 
         self.update()  # Trigger repaint
 
-    def update_text_display(self, text):
+    def update_text_display(self, text, colored_text, color):
         # menu_width, menu_height = 780, 150
         # if ((str(text) != str(self.title.text())) and len(str(text)) < 35 and ((self.geometry().width()) != (menu_width + 10))):
             # self.setGeometry(10, 1080 - menu_height - 10, menu_width + 10, menu_height) 
 
-        self.title.setText(str(text))
+        self.title.setText(str(text) + f"<span style=\"color:{color};\">\t\t\t{colored_text}</span>")
         
 
     def update_image_display(self, character_name):
@@ -178,7 +180,9 @@ class OverlayWindow(QWidget):
     def paintEvent(self, event):
         menu_width, menu_height = 780, 150
 
-        if (len(str(self.title.text())) < 35 and ((self.geometry().width()) != (822))):
+        # print(len(str(self.title.text())), str(self.title.text()))
+        if (len(str(self.title.text())) < 110 and ((self.geometry().width()) != (822))):
+            print("hi")
             self.setGeometry(10, 1080 - menu_height - 10, 822, menu_height) 
         
         painter = QPainter(self)
@@ -225,8 +229,11 @@ def start():
     rotation_names = ["P1", "P2", "Idle"]
 
     # total_assault_helper_thread = threading.Thread(target=total_assault_helper.start, args=(f"./res/{sys.argv[1]}", update_display, update_progress_bar))
-    total_assault_helper_thread = threading.Thread(target=total_assault_helper.start, args=(rotation_file_paths, update_display, update_progress_bar))
-    total_assault_helper_thread.start()
+
+    helper_client = TotalAssaultHelper(rotation_file_paths, update_display, update_progress_bar)
+
+    helper_client_thread = threading.Thread(target=helper_client.start, )
+    helper_client_thread.start()
 
     keyListenerThread = threading.Thread(target=tw.onKeyPressEvent)
     keyListenerThread.start()
@@ -235,11 +242,9 @@ def start():
     invisOverlay.show()
 
     time.sleep(1)
-    tw.init_update_fn(total_assault_helper.update_actions, invisOverlay.onKeyPressEvent)
+    tw.init_update_fn(helper_client.update_actions, invisOverlay.onKeyPressEvent)
     
-
-
-
+    # helper_client.update_label_signal.connect(tw.update_text_display)
     # invisible_overlay_thread = threading.Thread(target=invisible_overlay.start)
     # invisible_overlay_thread.start()
 
@@ -249,8 +254,8 @@ def start():
     print("Exit")
     sys.exit(exit_code)
 
-def update_display(text, character_name):
-    tw.update_text_display(text)
+def update_display(text, colored_text, color, character_name):
+    tw.update_text_display(text, colored_text, color)
     tw.update_image_display(character_name)
 
 def update_progress_bar(percent, immediate=False):

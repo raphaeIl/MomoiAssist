@@ -82,6 +82,21 @@ rainbow_colors = [QColor(255, 0, 0, 120),
  QColor(255, 0, 49, 120),
  QColor(255, 0, 24, 120),
  QColor(255, 0, 0, 120)]
+
+progress_colors = ['#00FF60',
+ '#00FF11',
+ '#63FF00',
+
+ '#E9FF00',
+ '#FFD900',
+ 
+ '#FFA800',
+ '#FF7B00',
+
+ '#FF4300',
+ '#FF2D00',
+ '#FF0000']
+
 def round_started():
         return pyautogui.pixel(807, 89) == (214, 134, 7)
 
