@@ -1,9 +1,0 @@
-QLabel {
-    color: white;
-    font-family: "Resource Han Rounded CN";
-    font-size: 90pt;
-    padding-top: 0px;
-    padding-right: 0px;
-    padding-bottom: 70px;
-    padding-left: 0px;
-}

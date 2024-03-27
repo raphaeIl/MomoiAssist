@@ -1,66 +1,30 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFontDatabase, QFont, QPixmap, QKeyEvent
-from PyQt5.QtGui import QPainter, QBrush, QLinearGradient, QColor, QFont, QPen
-from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QHBoxLayout
+from PyQt5.QtGui import QFontDatabase, QPixmap, QPainter, QBrush, QLinearGradient, QColor, QPalette
+from PyQt5.QtCore import Qt, QRectF, QObject, pyqtSignal
+
 import threading
-from pynput import keyboard
-from PyQt5.QtGui import QPalette, QColor
-import total_assault_helper
-import random
-import utils
-import os
-import invisible_overlay
 import time
-from PyQt5.QtCore import pyqtSignal, QObject
+import sys
+import os
+from pynput import keyboard
 
 from total_assault_helper import TotalAssaultHelper
+import invisible_overlay
+import utils
 
 class SignalEmitter(QObject):
     update_display = pyqtSignal(str, str, str, str)
-
-class TransparentImageWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-        # self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput)
-
-        
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setGeometry(0, 0, 1920, 1080)  # Fullscreen for 1920x1080 resolution
-
-        self.imageLabel = QLabel(self)
-        self.imageLabel.setGeometry(0, 0, 1920, 1080)
-        
-        self.pixmap = QPixmap("./res/kuro_overlay_red.png").scaled(1920, 1080, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-        self.opacity = 0  # Start with half opacity
-
-        self.updateImageOpacity()
-
-    def updateImageOpacity(self):
-        tempPixmap = QPixmap(self.pixmap.size())
-        tempPixmap.fill(Qt.transparent)
-
-        painter = QPainter(tempPixmap)
-        painter.setOpacity(self.opacity)
-        painter.drawPixmap(0, 0, self.pixmap)
-        painter.end()
-
-        self.imageLabel.setPixmap(tempPixmap)
-
 
 class OverlayWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.target_progress = 0  # Initial progress
+        self.target_progress = 0
         self.progress = 0
 
         menu_width, menu_height = 780, 150
 
-        self.setGeometry(10, 1080 - menu_height - 10, menu_width, menu_height)  # Set the size of the window
-        # self.setGeometry(0 - menu_height + 10, menu_width, menu_height)  # Set the size of the window
+        self.setGeometry(10, 1080 - menu_height - 10, menu_width, menu_height)
         self.initUI()
         self.color_rot = 0
         self.progress_bar_color = QColor(79, 197, 255, 150)
@@ -72,8 +36,7 @@ class OverlayWindow(QWidget):
         self.update_display = update_display
 
     def initUI(self):
-        # fontPath = './res/ResourceHanRoundedCN-Bold.ttf'
-        fontPath = './res/Google_Sans-500-100_0-0_0.ttf'
+        fontPath = './res/fonts/Google_Sans-500-100_0-0_0.ttf'
         QFontDatabase.addApplicationFont(fontPath)
 
         self.setWindowTitle("Overlay Window")
@@ -86,19 +49,17 @@ class OverlayWindow(QWidget):
 
         # Profile Picture
         self.profile_pic = QLabel(self)
-        pixmap = QPixmap("./res/skill_icons/mika.png")  # Replace with the path to your image
+        pixmap = QPixmap("./res/skill_icons/mika.png") 
         self.profile_pic.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio))
         layout.addWidget(self.profile_pic)
         layout.addStretch(1)
 
         self.profile_pic.setAlignment(Qt.AlignLeft)
-        # self.profile_pic.setStyleSheet("""QLabel { padding-right: 100px; }""")
 
         # Title
         title = QLabel("Idle", self)
         subtitle = QLabel("subtitle", self)
 
-        # title = QLabel("TYPE TIME DESCRIPTION", self)
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
         layout.addWidget(subtitle)
@@ -109,7 +70,7 @@ class OverlayWindow(QWidget):
         layout.addStretch(2)
         layout.setContentsMargins(15, 15, 0, 0)
 
-        with open('./res/style.qss', 'r') as f:
+        with open('./res/styles/style.qss', 'r') as f:
             style = f.read()
             title.setStyleSheet(style)
 
@@ -125,7 +86,6 @@ class OverlayWindow(QWidget):
     padding-left: 50px;
 }""")
         self.setLayout(layout)
-
         self.show()
 
 
@@ -157,18 +117,16 @@ class OverlayWindow(QWidget):
         self.update() 
 
     def updateProgress(self):
-        """Gradually update current progress towards the target progress."""
-        # print(self.progress, self.target_progress)
         if self.progress < self.target_progress:
-            self.progress += ((self.target_progress - self.progress) * 0.01) # Increment progress
+            self.progress += ((self.target_progress - self.progress) * 0.01) 
             if self.progress > self.target_progress:
                 self.progress = self.target_progress
         elif self.progress > self.target_progress:
-            self.progress -= 0.0001  # Decrement progress
+            self.progress -= 0.0001 
             if self.progress < self.target_progress:
                 self.progress = self.target_progress
 
-        self.update()  # Trigger repaint
+        self.update()
 
     def update_text_display(self, text, colored_text, color):
         menu_width, menu_height = 780, 150
@@ -191,27 +149,15 @@ class OverlayWindow(QWidget):
                 palette = QPalette()
                 palette.setColor(QPalette.WindowText, QColor(color))
                 self.subtitle.setPalette(palette)
-                pass
 
     def update_image_display(self, character_name):
         if self.current_character is not character_name and os.path.isfile(f"./res/skill_icons/{character_name}.webp"):
-            pixmap = QPixmap(f"./res/skill_icons/{character_name}.webp")  # Replace with the path to your image
+            pixmap = QPixmap(f"./res/skill_icons/{character_name}.webp") 
             self.profile_pic.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio))
             self.current_character = character_name
 
 
     def paintEvent(self, event):
-        # menu_width, menu_height = 780, 150
-
-        # print(len(str (self.title.text())), str(self.title.text()))
-        # print(self.title.text(), self.current_text_display)
-        # if ((str(self.title.text()) != self.current_text_display) and ((self.geometry().width()) != (822))):
-        #     if ((len(str(self.title.text())) < len(self.current_text_display))):
-        #         print("updated window size")
-        #         self.setGeometry(10, 1080 - menu_height - 10, 822, menu_height)
-            
-        #     self.current_text_display = str(self.title.text())
-        
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)  # For smooth edges
         painter.setBrush(QBrush(QColor(2, 0, 31, 150)))  # Background color
@@ -222,8 +168,8 @@ class OverlayWindow(QWidget):
         bottom_padding = 30
         rect_x = self.width() / 2 - bar_width / 2
         rect_y = self.height() - bar_height - bottom_padding
-        # Progress Bar
 
+        # Progress Bar
         gradient = QLinearGradient(rect_x, 0, rect_x + bar_width, 0)
         self.updateProgress()
         
@@ -248,14 +194,11 @@ def start():
     global tw
 
     tw = OverlayWindow()
-    tw.setProgress(0.5, True)  # Set initial progress here
-    widget = TransparentImageWidget()
-    widget.showFullScreen()
+    tw.setProgress(0.5, True)
 
-    rotation_file_paths = ["./res/idle.txt", "./res/p1.txt", "./res/p2.txt"]
+    rotation_file_paths = ["./res/rotation_data/idle.txt", "./res/rotation_data/p1.txt", "./res/rotation_data/p2.txt"]
     rotation_names = ["Idle", "P1", "P2"]
 
-    # total_assault_helper_thread = threading.Thread(target=total_assault_helper.start, args=(f"./res/{sys.argv[1]}", update_display, update_progress_bar))
     emitter = SignalEmitter()
     emitter.update_display.connect(update_display)
 
@@ -273,10 +216,6 @@ def start():
     time.sleep(1)
     tw.init_update_fn(helper_client.update_actions, invisOverlay.onKeyPressEvent)
     
-    # helper_client.update_label_signal.connect(tw.update_text_display)
-    # invisible_overlay_thread = threading.Thread(target=invisible_overlay.start)
-    # invisible_overlay_thread.start()
-
     print(tw.geometry())
 
     exit_code = app.exec_()

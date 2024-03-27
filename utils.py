@@ -101,7 +101,6 @@ def round_started():
         return pyautogui.pixel(807, 89) == (214, 134, 7)
 
 def get_ingame_time_display():
-    # return screenshot_and_recognize_text(1604, 34, 115, 45)
     return screenshot_and_recognize_text(1604, 34, 200, 45)
 
 def screenshot_and_recognize_text(x, y, width, height):
